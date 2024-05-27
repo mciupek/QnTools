@@ -37,6 +37,7 @@
 
 namespace Qn::Correlation {
 
+
 /**
  * CorrelationActionBase
  */
@@ -119,19 +120,19 @@ class CorrelationAction<Function, WeightFunction,
   CorrelationAction(std::string_view correlation_name, Function function,
                     WeightFunction weight_function, bool use_weights,
                     const std::array<std::string, NumberOfInputs> &input_names,
-                    AxesConfig event_axes, unsigned int n_samples)
+                    AxesConfig event_axes, unsigned int n_samples, int modus)
       : CorrelationActionBase(correlation_name),
         n_samples_(n_samples),
         input_names_(input_names),
         event_axes_(event_axes),
         function_(function),
         weight_function_(weight_function),
-        use_weights_(use_weights) {}
+        use_weights_(use_weights),
+        use_modus_(modus) {}
 
   template <std::size_t N>
   auto SetReaderInputNames(const std::array<std::string, N> &names) {
-    input_from_reader_names_.clear();
-    copy(begin(names), end(names), back_inserter(input_from_reader_names_));
+    input_from_reader_names_ = names;
   }
 
  private:
@@ -141,12 +142,13 @@ class CorrelationAction<Function, WeightFunction,
   unsigned int n_samples_ = 1;  /// Number of samples used in the ReSampler.
   std::array<std::string, NumberOfInputs>
       input_names_;                 /// Names of the input Q-vectors.
- std::vector<std::string>
+ std::array<std::string, NumberOfInputs>
       input_from_reader_names_;     /// Names of the input Q-vectors.
   AxesConfig event_axes_;           /// Configuration of the event axes.
   Function function_;               /// correlation function.
   WeightFunction weight_function_;  /// weight function.
   bool use_weights_;                /// determines if weight is used.
+  int use_modus_ = 0;               /// use correct binning counting
 
   /**
    * Returns the name of the columns used in the correction step. This includes
@@ -232,10 +234,7 @@ class CorrelationAction<Function, WeightFunction,
     reader.Restart();
     auto input_data = std::vector<TTreeReaderValue<DataContainerQVector>>{};
     // Get a vector of TTreeReaderValues.
-    if (input_from_reader_names_.empty()) {
-      copy(begin(input_names_), end(input_names_),
-           back_inserter(input_from_reader_names_));
-    }
+    if (input_from_reader_names_.empty()) input_from_reader_names_ = input_names_;
     std::transform(
         std::begin(input_from_reader_names_), std::end(input_from_reader_names_),
         std::back_inserter(input_data), [&reader](const std::string &name) {
@@ -278,7 +277,22 @@ class CorrelationAction<Function, WeightFunction,
     std::array<const Qn::QVector *, NumberOfInputs> q_vectors;
     const std::array<const DataContainerRef, NumberOfInputs> input_array = {
         std::cref(input_q)...};
-    LoopOverBins(initial_offset, q_vectors, input_array, sample_ids, 0);
+    LoopOverBins(initial_offset, q_vectors, input_array, sample_ids, 0, PrepareArray());
+  }
+
+  std::array<bool,400> PrepareArray(){
+    //40
+    const long unsigned int N = 20*20;
+    std::array<bool,N> arr;
+    arr.at(0) = true;
+    for(Int_t i = 1; i<N;i++){
+      if((i % (20+1)) == 0){
+        arr.at(i) = true;
+      } else{
+        arr.at(i) = false;
+      }
+    }
+    return arr;
   }
 
   /**
@@ -323,8 +337,9 @@ class CorrelationAction<Function, WeightFunction,
     use_weights_ = other.use_weights_;
     event_axes_ = other.event_axes_;
     correlation_ = other.correlation_;
+    use_modus_ = other.use_modus_;
+    
   }
-
   /**
    * Loops recursivly over all bins of the correlation result.
    * @param out_bin Initial offset based on the current event parameters.
@@ -337,7 +352,8 @@ class CorrelationAction<Function, WeightFunction,
   void LoopOverBins(
       long &out_bin, std::array<const Qn::QVector *, NumberOfInputs> &q_array,
       const std::array<const DataContainerRef, NumberOfInputs> &input_array,
-      const ROOT::RVec<ULong64_t> &sample_ids, std::size_t step) {
+      const ROOT::RVec<ULong64_t> &sample_ids, std::size_t step, std::array<bool,400> arr) {
+        //std::cout << use_modus_ << std::endl;
     if (step + 1 == NumberOfInputs) {  /// base case
       for (const auto &bin : input_array[step].get()) {
         if (bin.n() < 1.) {
@@ -345,19 +361,44 @@ class CorrelationAction<Function, WeightFunction,
           continue;
         }
         q_array[step] = &bin;
-        correlation_[out_bin].Fill(
+        if (use_modus_ == 3){
+          if(arr.at(out_bin % 400) == true)  {
+              correlation_[out_bin].Fill(
+              TemplateFunctions::Call(function_, q_array),
+              TemplateFunctions::Call(weight_function_, q_array), sample_ids);
+              ++out_bin;
+              } else{
+        //      correlation_[out_bin].Fill(
+        //      0,
+        //      0, sample_ids);
+              ++out_bin;
+              }
+
+            } else{
+            correlation_[out_bin].Fill(
             TemplateFunctions::Call(function_, q_array),
             TemplateFunctions::Call(weight_function_, q_array), sample_ids);
-        ++out_bin;
+            ++out_bin;
+        }
+
       }
     } else {  /// recursion
       for (const auto &bin : input_array[step].get()) {
         if (bin.n() < 1.) {
-          ++out_bin;
+            Int_t out_bin_offset = 1;
+            for(Int_t i = step; i<(NumberOfInputs-1); i++){
+            out_bin_offset = out_bin_offset * input_array[step].get().size();
+          }
+          if (use_modus_ == 0){
+            ++out_bin;
+          } else{
+            out_bin = out_bin + out_bin_offset;
+          }
+          //++out_bin;
           continue;
         }
         q_array[step] = &bin;
-        LoopOverBins(out_bin, q_array, input_array, sample_ids, step + 1);
+        LoopOverBins(out_bin, q_array, input_array, sample_ids, step + 1, PrepareArray());
       }
     }
   }
@@ -415,7 +456,7 @@ auto MakeCorrelationAction(
     std::string_view correlation_name, Function function,
     WeightFunction weight_function, UseWeights use_weights,
     const std::array<std::string, FunctionTraits<Function>::Arity> input_names,
-    AxesConfig event_axes, unsigned int n_samples) {
+    AxesConfig event_axes, unsigned int n_samples, int modus) {
   using DataContainerTuple =
       TupleOf<FunctionTraits<Function>::Arity, Qn::DataContainerQVector>;
   using EventParameterTuple = typename AxesConfig::AxisValueTypeTuple;
@@ -423,8 +464,9 @@ auto MakeCorrelationAction(
   return CorrelationAction<Function, WeightFunction, DataContainerTuple,
                            AxesConfig, EventParameterTuple>(
       correlation_name, function, weight_function, usew, input_names,
-      event_axes, n_samples);
+      event_axes, n_samples,modus);
 }
 
 }  // namespace Qn::Correlation
 #endif  // QNTOOLS_CORRELATIONHELPER_H_
+

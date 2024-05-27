@@ -22,7 +22,6 @@
 #include <memory>
 #include <utility>
 
-#include "ROOT/RMakeUnique.hxx"
 
 #include "CorrectionAxisSet.hpp"
 #include "SubEventChannels.hpp"
@@ -198,6 +197,9 @@ class Detector {
  ClassDef(Detector, 2);
   /// \endcond
 };
+
+template<>
+Long64_t DataContainer<std::unique_ptr<Qn::SubEvent>>::Merge(TCollection *inputlist) = delete;
 
 }
 

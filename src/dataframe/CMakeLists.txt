@@ -41,7 +41,6 @@ IF (QnTools_BUILD_TESTS)
             correction/CorrectionAction.test.cpp
             correction/CorrectionBuilder.test.cpp
             correlation/CorrelationAction.test.cpp
-            correlation/CorrelationBuilder.test.cpp
             toymc/ParticleGeneratorFunctor.test.cpp
             toymc/TrackingDetectorFunctor.test.cpp
             toymc/ChannelDetectorFunctor.test.cpp

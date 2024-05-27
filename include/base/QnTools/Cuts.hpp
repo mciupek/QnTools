@@ -20,8 +20,6 @@
 #ifndef QNCUTS_H
 #define QNCUTS_H
 
-#include "ROOT/RIntegerSequence.hxx"
-#include "ROOT/RMakeUnique.hxx"
 #include <string>
 
 namespace Qn {

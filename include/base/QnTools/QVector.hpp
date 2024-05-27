@@ -165,6 +165,10 @@ class QVector {
   void Reset() {
     n_ = 0;
     sum_weights_ = 0.;
+    sum_weights2_ = 0.;
+    sum_weights3_ = 0.;
+    sum_weights4_ = 0.;
+
     quality_ = false;
     for (auto &q : q_) { q = QVec(); }
   }
@@ -324,6 +328,10 @@ class QVector {
     quality_ = other.quality_;
     n_ = other.n_;
     sum_weights_ = other.sum_weights_;
+    sum_weights2_ = other.sum_weights2_;
+    sum_weights3_ = other.sum_weights3_;
+    sum_weights4_ = other.sum_weights4_;
+
   }
 
   /**
@@ -365,6 +373,21 @@ class QVector {
    */
   inline float sumweights() const { return sum_weights_; }
   /**
+   * Returns the sum of weights of the Q-Vector.
+   * @return Sum of weights of the Q-Vector.
+   */
+  inline float sumweights2() const { return sum_weights2_; }
+  /**
+   * Returns the sum of weights of the Q-Vector.
+   * @return Sum of weights of the Q-Vector.
+   */
+  inline float sumweights3() const { return sum_weights3_; }
+  /**
+   * Returns the sum of weights of the Q-Vector.
+   * @return Sum of weights of the Q-Vector.
+   */
+  inline float sumweights4() const { return sum_weights4_; }
+  /**
    * Returns the number of contributors of the Q-Vector.
    * @return number of contributors of the Q-Vector.
    */
@@ -392,6 +415,52 @@ class QVector {
 
   QVector DeNormal() const;
 
+// ____________________________ Normal Code _____________________________
+
+//  /**
+//   * Adds a new data vector to the qvector.
+//   * @param phi angle of the particle or channel.
+//   * @param weight weight of the particle or channel e.g. channel multiplicity.
+//   */
+//  inline void Add(const double phi, const double weight) {
+//    if (weight < kminimumweight) return;
+//    unsigned int pos = 0;
+//    for (unsigned int h = 1; h <= maximum_harmonic_; ++h) {
+//      if (bits_.test(h - 1)) {
+//        q_[pos].x += (weight * std::cos(h * harmonic_multiplier_ * phi));
+//        q_[pos].y += (weight * std::sin(h * harmonic_multiplier_ * phi));
+//        ++pos;
+//      }
+//    }
+//    sum_weights_ += weight;
+//    n_ += 1;
+//  }
+//
+//  /**
+// * Adds a new data vector to the qvector.
+// * @param phi angle of the particle or channel.
+// * @param offset offset of the phi channel.
+// * @param weight weight of the particle or channel e.g. channel multiplicity.
+// */
+//  inline void Add(const double phi, const double offset, const double weight) {
+//    if (weight < kminimumweight) return;
+//    unsigned int pos = 0;
+//    for (unsigned int h = 1; h <= maximum_harmonic_; ++h) {
+//      if (bits_.test(h - 1)) {
+//        q_[pos].x += (weight * std::cos(h * harmonic_multiplier_ * phi) * offset);
+//        q_[pos].y += (weight * std::sin(h * harmonic_multiplier_ * phi) * offset);
+//        ++pos;
+//      }
+//    }
+//    sum_weights_ += weight;
+//    n_ += 1;
+//  }
+
+// ____________________________ Normal Code _____________________________
+
+
+// ____________________________ Hard Code implementiation of Q-Vector with different weight binnings... _____________________________
+
   /**
    * Adds a new data vector to the qvector.
    * @param phi angle of the particle or channel.
@@ -402,12 +471,43 @@ class QVector {
     unsigned int pos = 0;
     for (unsigned int h = 1; h <= maximum_harmonic_; ++h) {
       if (bits_.test(h - 1)) {
+        if (maximum_harmonic_ == 8){
+          Double_t nharm = 1;
+          Double_t weightpow = 1;
+          if (h == 1) nharm = 2;
+          if (h == 2) nharm = 2;
+          if (h == 3) nharm = 2; 
+          if (h == 4) nharm = 2; 
+          if (h == 5) nharm = 4; 
+          if (h == 6) nharm = 4; 
+          if (h == 7) nharm = 4; 
+          if (h == 8) nharm = 4; 
+
+          if (h == 1) weightpow =1;
+          if (h == 2) weightpow =2;
+          if (h == 3) weightpow =3; 
+          if (h == 4) weightpow =4; 
+          if (h == 5) weightpow =1; 
+          if (h == 6) weightpow =2; 
+          if (h == 7) weightpow =3; 
+          if (h == 8) weightpow =4;   
+ 
+        q_[pos].x += (std::pow(weight,weightpow) * std::cos(nharm * phi));
+        q_[pos].y += (std::pow(weight,weightpow) * std::sin(nharm * phi));
+        ++pos;
+
+        } else{
         q_[pos].x += (weight * std::cos(h * harmonic_multiplier_ * phi));
         q_[pos].y += (weight * std::sin(h * harmonic_multiplier_ * phi));
         ++pos;
+        }
       }
     }
     sum_weights_ += weight;
+    sum_weights2_ += (weight*weight);
+    sum_weights3_ += (weight*weight*weight);
+    sum_weights4_ += (weight*weight*weight*weight);
+
     n_ += 1;
   }
 
@@ -422,12 +522,42 @@ class QVector {
     unsigned int pos = 0;
     for (unsigned int h = 1; h <= maximum_harmonic_; ++h) {
       if (bits_.test(h - 1)) {
+        if (maximum_harmonic_ == 8){
+          Double_t nharm = 0;
+          Double_t weightpow = 0;
+          if (h == 1) nharm = 2;
+          if (h == 2) nharm = 2;
+          if (h == 3) nharm = 2; 
+          if (h == 4) nharm = 2; 
+          if (h == 5) nharm = 4; 
+          if (h == 6) nharm = 4; 
+          if (h == 7) nharm = 4; 
+          if (h == 8) nharm = 4; 
+
+          if (h == 1) weightpow =1;
+          if (h == 2) weightpow =2;
+          if (h == 3) weightpow =3; 
+          if (h == 4) weightpow =4; 
+          if (h == 5) weightpow =1; 
+          if (h == 6) weightpow =2; 
+          if (h == 7) weightpow =3; 
+          if (h == 8) weightpow =4;  
+
+        q_[pos].x += (std::pow(weight,weightpow) * std::cos(nharm * phi) * offset);
+        q_[pos].y += (std::pow(weight,weightpow) * std::sin(nharm * phi) * offset);
+        ++pos;
+
+        } else{
         q_[pos].x += (weight * std::cos(h * harmonic_multiplier_ * phi) * offset);
         q_[pos].y += (weight * std::sin(h * harmonic_multiplier_ * phi) * offset);
         ++pos;
+        }
       }
     }
     sum_weights_ += weight;
+    sum_weights2_ += (weight*weight);
+    sum_weights3_ += (weight*weight*weight);
+    sum_weights4_ += (weight*weight*weight*weight);
     n_ += 1;
   }
 
@@ -452,6 +582,9 @@ class QVector {
   CorrectionStep correction_step_ = CorrectionStep::RAW;///< correction step defined by enumerator
   int n_ = 0;                                           ///< number of data vectors contributing to the q vector
   float sum_weights_ = 0.0;                             ///< sum of weights
+  float sum_weights2_ = 0.0;                            ///< sum of weights squared
+  float sum_weights3_ = 0.0;                             ///< sum of weights cubic
+  float sum_weights4_ = 0.0;                            ///< sum of weights quadratic
   std::bitset<kmaxharmonics> bits_{};                   ///< Bitset for keeping track of the harmonics
   std::vector<QVec> q_;                                 ///< array of qvectors for the different harmonics
   /**

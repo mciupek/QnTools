@@ -21,7 +21,6 @@
 #include <array>
 #include <string>
 #include <vector>
-
 #include <ROOT/RResultPtr.hxx>
 
 #include "AverageHelper.hpp"
@@ -75,11 +74,11 @@ class CorrelationBuilder {
     auto correlation_name = MakeName(name);
     auto correlation = Qn::Correlation::MakeCorrelationAction(
         correlation_name, function, weight_function, use_weights, input_names,
-        event_axes_, n_samples_);
+        event_axes_, n_samples_,use_modus_);
     correlation.SetReaderInputNames(input_reader_names);
     result_ptrs_.push_back(Qn::MakeAverageHelper(correlation).BookMe(*df_));
   }
-
+  
   /**
    * Add Correlations using the initialization object
    * @tparam N
@@ -102,7 +101,7 @@ class CorrelationBuilder {
     auto correlation_name = MakeName(name);
     auto correlation = Qn::Correlation::MakeCorrelationAction(
         correlation_name, function, weight_function, use_weights, input_names,
-        event_axes_, n_samples_);
+        event_axes_, n_samples_,use_modus_);
     initializations_.emplace_back(
         std::make_unique<InitializationObjects>(initializations));
     result_ptrs_.push_back(Qn::MakeAverageHelper(correlation)
@@ -138,7 +137,7 @@ class CorrelationBuilder {
     auto correlation_name = MakeName(name);
     auto correlation = Qn::Correlation::MakeCorrelationAction(
         correlation_name, function, weight_function, use_weights, input_names,
-        event_axes_, n_samples_);
+        event_axes_, n_samples_,use_modus_);
     correlation.SetReaderInputNames(input_reader_names);
     result_ptrs_.push_back(
         Qn::MakeAverageHelper(correlation)
@@ -162,6 +161,7 @@ class CorrelationBuilder {
       initializations_;  /// all initialization objects to keep them in scope.
   int n_samples_;  /// number of bootstrap samples needs to be equal to the
                    /// preconfigured samples in the dataframe
+  int use_modus_; ///modus of bin counting
 
   auto MakeName(const std::string &name) {
     auto correlation = std::string{name};

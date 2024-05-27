@@ -260,7 +260,7 @@ class DataContainer : public TObject {
     const auto index = GetLinearIndex(coordinates);
     if (index > -1) lambda(data_[index]);
   }
-
+  
   /**
  * Calls function on element specified by indices.
  * @tparam Function type of function to be called on the object
@@ -296,6 +296,23 @@ class DataContainer : public TObject {
     }
     throw std::out_of_range("axis not found aborting");
   }
+
+  /**
+ * Change Axis name to another
+ * @param oldname  Name of the desired axis
+ * @param newname  New name of the desired axis
+ * @return      Axis
+ */
+    void SetAxisName(const std::string oldname,const std::string newname){
+    for (auto axis : axes_) {
+          std::cout << axis.Name() << std::endl;
+
+      if (oldname == axis.Name()) axis.SetName(newname);
+                std::cout << axis.Name() << std::endl;
+
+    }
+  }
+
 
   /**
  * Calculates indices in multiple dimensions from linearized index
@@ -924,6 +941,12 @@ class DataContainer : public TObject {
     (void) errors;
   }
 
+  int GetGoodNumberOfBins(){
+    int numb = -999;
+    for (auto &bin : data_) numb = bin.NumberofGoodSamples();
+    return numb;
+  }
+
   /// \cond CLASSIMP
   ClassDef(DataContainer, 14);
   /// \endcond
@@ -1087,6 +1110,12 @@ template<>
 Long64_t DataContainer<std::pair<bool, float>, float>::Merge(TCollection *inputlist) = delete;
 template<>
 Long64_t DataContainer<Qn::QVector, float>::Merge(TCollection *inputlist) = delete;
+template<>
+Long64_t DataContainer<Qn::QVector>::Merge(TCollection *inputlist) = delete;
+template<>
+Long64_t DataContainer<TH1F>::Merge(TColection *inputlist) = delete;
+template<>
+Long64_t DataContainer<double>::Merge(TCollection *inputlist) = delete;
 
 };// namespace Qn
 #endif

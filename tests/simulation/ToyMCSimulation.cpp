@@ -249,7 +249,7 @@ auto f_weight = [](const Qn::QVector &a) { return a.sumweights()*(a.sumweights()
 auto c22 = Qn::MakeAverageHelper(Qn::Correlation::MakeCorrelationAction(correlation_name + detector,
                                                                         Qn::Correlation::TwoParticle::c2(2),
                                                                         f_weight,Qn::Correlation::UseWeights::Yes,
-                                                                        inputs, event_axes, n_samples))
+                                                                        inputs, event_axes, n_samples,0))
     .BookMe(dfs);
 correlations.emplace(detector + "_" + correlation_name, c22);
 }

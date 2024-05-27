@@ -31,7 +31,8 @@ class Stat {
   /// Type of Error used for plotting the results.
   enum class ErrorType {
     BOOTSTRAP,   /// Using uncertainties bootstrapping
-    PROPAGATION  /// Using uncertainties from error propagation
+    PROPAGATION,  /// Using uncertainties from error propagation
+    BOOTSTRAPSAMPLES /// Show the number of used Bootstrapping samples for the calculation.
   };
 
   virtual ~Stat() = default;

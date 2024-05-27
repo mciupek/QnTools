@@ -65,7 +65,7 @@ TEST(CorrelationAction, BasicIntegratedQ) {
   auto f_weight = [](const Qn::QVector &a) { return a.sumweights()*(a.sumweights()-1); };
   std::vector<Qn::DataContainerQVector> initialization{q};
   auto correlation = Qn::Correlation::MakeCorrelationAction(
-      "test", f_test, f_weight, Qn::Correlation::UseWeights::Yes, {"q"}, event_axes, 0);
+      "test", f_test, f_weight, Qn::Correlation::UseWeights::Yes, {"q"}, event_axes, 0,0);
   auto avg = Qn::MakeAverageHelper(correlation);
   auto res = avg.SetInitializationWithInitializationObject(&initialization)
                  .BookMe(dfs);

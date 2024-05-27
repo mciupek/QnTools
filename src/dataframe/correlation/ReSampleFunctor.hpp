@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <random>
 #include <vector>
+#include <iostream>
 
 #include <ROOT/RVec.hxx>
 #include <RtypesCore.h>
@@ -39,6 +40,13 @@ class ReSampleFunctor {
   explicit ReSampleFunctor(std::size_t n = 100)
       : n_(n), generator_(std::random_device{}()), poisson_(1) {}
 
+  void SetVector(){
+    ROOT::RVec<ULong64_t> vec(n_);
+    std::cout << "RESAMPLE VECTOR IS SET" << std::endl;
+    for (auto &entry : vec) entry = poisson_(generator_);
+    vec_ = vec;
+  }
+
   /**
    * Defines the tiems a single event enters in the different samples.
    * This function is called for each event during the event loop.
@@ -50,11 +58,15 @@ class ReSampleFunctor {
     return vec;
   }
 
+
+
  private:
   const std::size_t n_;                  /// Number of samples
   std::mt19937 generator_;               /// Random number generator
   std::poisson_distribution<> poisson_;  /// distribution of events per sample.
+  ROOT::RVec<ULong64_t> vec_;            /// Vector of samples
 };
+
 
 /**
  * Helper function to add the samples to the RDataFrame.
@@ -67,7 +79,23 @@ class ReSampleFunctor {
  */
 template <typename DataFrame>
 auto Resample(DataFrame df, std::size_t n) {
+  //auto resample = ReSampleFunctor(n);
   return df.template Define("samples", ReSampleFunctor(n), {});
+}
+
+/**
+ * Helper function to add the samples to the RDataFrame.
+ * The Event loop is lazily executed as soon as the "samples" branch information
+ * is consumed by a correlation.
+ * @tparam DataFrame type of the RDataFrame.
+ * @param df RDataFrame wrapping the input data.
+ * @param n Number of samples.
+ * @return The resulting RDataFrame with the sample definition.
+ */
+template <typename DataFrame>
+auto Resample(DataFrame df, ReSampleFunctor func) {
+  //auto resample = ReSampleFunctor(n);
+  return df.template Define("samples", func, {});
 }
 
 }  // namespace Qn::Correlation
