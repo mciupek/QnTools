@@ -22,6 +22,7 @@
 #include <memory>
 #include <utility>
 
+#include "ROOT/RMakeUnique.hxx"
 
 #include "CorrectionAxisSet.hpp"
 #include "SubEventChannels.hpp"
